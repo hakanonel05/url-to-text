@@ -1,0 +1,5 @@
+{
+  "name": "PureContent Extractor",
+  "description": "A minimalist tool that extracts headings and text from any webpage, removing ads, images, and clutter using Gemini's advanced reasoning.",
+  "requestFramePermissions": []
+}
