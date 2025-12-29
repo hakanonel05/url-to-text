@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { AppStatus, ExtractionResult } from './types';
 import { extractWebContent } from './services/geminiService';
@@ -22,22 +22,26 @@ const App: React.FC = () => {
     setResult(null);
 
     try {
-      // Hızlandırılmış servis çağrısı
       const data = await extractWebContent(url);
       setResult(data);
       setStatus(AppStatus.SUCCESS);
     } catch (err: any) {
-      setError(err.message || 'Hata: Sayfa içeriği kopyalanamadı.');
+      setError(err.message || 'Hata: İçerik alınamadı.');
       setStatus(AppStatus.ERROR);
     }
   }, [url]);
 
-  const handleClear = () => {
-    setUrl('');
-    setResult(null);
-    setStatus(AppStatus.IDLE);
-    setError(null);
-  };
+  const totalWordCount = useMemo(() => {
+    if (!result) return 0;
+    
+    let text = result.title + ' ';
+    result.sections.forEach(section => {
+      text += (section.heading + ' ' + section.content + ' ');
+    });
+    
+    // Boşluklara göre bölüp boş olmayan elemanları sayar
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  }, [result]);
 
   const copyToClipboard = () => {
     if (!result) return;
@@ -51,10 +55,10 @@ const App: React.FC = () => {
       <section className="mb-12">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-2xl font-bold mb-4 text-slate-800 flex items-center">
-            <span className="mr-2">⚡</span> Hızlı Metin Çıkarıcı
+            <span className="mr-2">🚀</span> Hibrit Metin Çıkarıcı
           </h2>
           <p className="text-slate-600 mb-6">
-            Gemini 3 Flash ile optimize edildi. Sayfayı saniyeler içinde ziyaret eder ve asıl metni birebir getirir.
+            Açık kaynak <strong>Jina Reader</strong> ile sayfa okunur, <strong>Gemini Flash</strong> ile saniyeler içinde yapılandırılır.
           </p>
           
           <form onSubmit={handleExtract} className="space-y-4">
@@ -80,14 +84,14 @@ const App: React.FC = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Yıldırım Hızında Çıkarılıyor...
+                  Açık Kaynak Reader Çalışıyor...
                 </span>
-              ) : 'Hızlı Çıkar'}
+              ) : 'Hemen Metni Al'}
             </button>
           </form>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 animate-pulse">
+            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
               {error}
             </div>
           )}
@@ -98,12 +102,14 @@ const App: React.FC = () => {
         <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
             <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest flex items-center">
-                <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2 animate-ping"></span>
-                Birebir Aktarıldı
-              </span>
-              <button onClick={copyToClipboard} className="bg-white border border-slate-200 px-3 py-1 rounded-lg text-slate-600 hover:text-indigo-600 font-bold text-xs shadow-sm transition-all">
-                Hızlı Kopyala
+              <div className="flex items-center space-x-3">
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Birebir Sayfa İçeriği</span>
+                <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {totalWordCount} Kelime
+                </span>
+              </div>
+              <button onClick={copyToClipboard} className="bg-white border border-slate-200 px-3 py-1 rounded-lg text-slate-600 hover:text-indigo-600 font-bold text-xs shadow-sm transition-colors">
+                Kopyala
               </button>
             </div>
 
